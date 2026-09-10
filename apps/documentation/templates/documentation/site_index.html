@@ -1,0 +1,22 @@
+{% extends "documentation/base.html" %}
+
+{% block title %}Documentation{% endblock %}
+
+{% block content %}
+<div class="flex-1 overflow-y-auto scroll-col">
+  <div class="max-w-3xl mx-auto px-6 py-12">
+    <h1 class="text-3xl font-semibold tracking-tight">Documentation</h1>
+    <p class="text-muted mt-2">Choose a documentation site to browse.</p>
+    <div class="mt-8 grid gap-4 sm:grid-cols-2">
+      {% for site in sites %}
+      <a href="/docs/{{ site.slug }}/" class="rounded-xl border border-line p-5 hover:border-accent hover:bg-bgsoft transition-colors">
+        <div class="font-semibold">{{ site.name }}</div>
+        {% if site.description %}<div class="text-sm text-muted mt-1">{{ site.description }}</div>{% endif %}
+      </a>
+      {% empty %}
+      <p class="text-muted">No documentation sites configured.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

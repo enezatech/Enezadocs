@@ -1,0 +1,22 @@
+<aside id="sidebar" class="hidden lg:block border-r border-line bg-bg min-h-0">
+  <div class="h-full overflow-y-auto scroll-col" style="padding:1.25rem 0 2rem">
+    <nav id="navTree" class="px-3">
+      {% include "documentation/components/nav_tree.html" with nodes=nav_tree %}
+    </nav>
+  </div>
+</aside>
+
+<div id="drawer" class="lg:hidden fixed inset-0 z-50 hidden">
+  <div id="drawerOverlay" class="absolute inset-0 bg-black/40"></div>
+  <aside class="absolute inset-y-0 left-0 w-80 max-w-[85vw] bg-bg border-r border-line shadow-xl flex flex-col">
+    <div class="flex items-center justify-between h-14 px-4 border-b border-line shrink-0">
+      <span class="font-semibold tracking-tight">{{ site.name }}</span>
+      <button id="drawerClose" class="grid h-9 w-9 place-items-center rounded-lg text-ink hover:bg-bgsoft" aria-label="Close navigation">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <nav id="navTreeMobile" class="flex-1 overflow-y-auto scroll-col px-3 py-4">
+      {% include "documentation/components/nav_tree.html" with nodes=nav_tree %}
+    </nav>
+  </aside>
+</div>

@@ -1,0 +1,63 @@
+{% extends "documentation/base.html" %}
+{% load socialaccount %}
+
+{% block title %}Sign in · Documentation{% endblock %}
+
+{% block content %}
+{% get_providers as socialaccount_providers %}
+<main class="flex-1 min-h-0 overflow-y-auto scroll-col flex items-center justify-center px-6 py-12">
+  <div class="w-full max-w-md">
+    <div class="rounded-2xl border border-line bg-surface shadow-xl overflow-hidden">
+      <div class="px-7 pt-8 pb-2">
+        <h1 class="text-2xl font-semibold tracking-tight">Sign in</h1>
+        <p class="mt-1.5 text-sm text-muted">Welcome back. Continue to your documentation.</p>
+      </div>
+
+      {% if socialaccount_providers %}
+      <div class="px-7 py-5 grid gap-3">
+        {% for provider in socialaccount_providers %}
+        <a href="{% provider_login_url provider.id process='login' %}" class="btn-secondary">
+          {% if provider.id == 'github' %}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.6.5.5 5.6.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 .1 1.8 1.9 1.8 1.9 1.7 2.4 4.3 1.7 5.4 1.3.1-1 .4-1.7.7-2.1-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.2-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C18.3 4.9 19.3 5.2 19.3 5.2c.6 1.5.2 2.8.1 3.1.7.9 1.2 1.9 1.2 3.2 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A11.5 11.5 0 0 0 23.5 12C23.5 5.6 18.4.5 12 .5Z"/></svg>
+          {% elif provider.id == 'google' %}
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.5 12.3c0-.9-.1-1.5-.3-2.2H12v4.2h6.4c-.1 1.1-.8 2.7-2.4 3.8l3.6 2.8c2.2-2 3.9-5 3.9-8.6Z"/><path fill="#34A853" d="M12 24c3.2 0 5.9-1 7.9-2.9l-3.6-2.8c-1 .7-2.3 1.1-4.3 1.1-3.3 0-6.1-2.1-7.1-5l-3.7 2.9C3.2 21.2 7.3 24 12 24Z"/><path fill="#FBBC05" d="M4.9 14.4A7.6 7.6 0 0 1 4.5 12c0-.8.1-1.6.4-2.4L1.2 6.7A12 12 0 0 0 0 12c0 1.9.5 3.7 1.2 5.3l3.7-2.9Z"/><path fill="#EA4335" d="M12 4.7c2.3 0 3.9 1 4.8 1.9l3.3-3.2C17.9 1.3 15.2 0 12 0 7.3 0 3.2 2.8.9 6.7l3.7 2.9C5.9 6.8 8.7 4.7 12 4.7Z"/></svg>
+          {% endif %}
+          Sign in with {{ provider.name }}
+        </a>
+        {% endfor %}
+      </div>
+      <div class="px-7 flex items-center gap-3 text-xs text-muted">
+        <span class="h-px flex-1 bg-line"></span>or continue with email<span class="h-px flex-1 bg-line"></span>
+      </div>
+      {% endif %}
+
+      <form method="post" action="{% url 'account_login' %}" class="px-7 py-5 grid gap-4">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<p class="err">{{ form.non_field_errors.0 }}</p>{% endif %}
+        <div>
+          <label for="id_login" class="field-label">Email</label>
+          <input id="id_login" name="login" type="email" class="input mt-1.5" placeholder="you@company.com" autocomplete="email" required />
+          {% if form.login.errors %}<p class="err mt-1.5">{{ form.login.errors.0 }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="id_password" class="field-label">Password</label>
+          <input id="id_password" name="password" type="password" class="input mt-1.5" placeholder="••••••••" autocomplete="current-password" required />
+          {% if form.password.errors %}<p class="err mt-1.5">{{ form.password.errors.0 }}</p>{% endif %}
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <label class="flex items-center gap-2 text-muted hover:text-ink cursor-pointer">
+            <input type="checkbox" name="remember" class="accent-checkbox" />Remember me
+          </label>
+          <a href="{% url 'account_reset_password' %}" class="text-muted hover:text-ink">Forgot password?</a>
+        </div>
+        {% if redirect_field_value %}<input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />{% endif %}
+        <button type="submit" class="btn-primary mt-1">Sign in</button>
+      </form>
+
+      <div class="px-7 pb-8">
+        <p class="text-center text-sm text-muted">New here? <a href="{% url 'account_signup' %}" class="font-medium underline underline-offset-2" style="color:var(--accent-fg)">Create an account</a></p>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

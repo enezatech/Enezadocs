@@ -1,0 +1,13 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "mcp": {
+    "enezadocs-developer": {
+      "type": "remote",
+      "url": "http://127.0.0.1:8000/mcp/testfun/",
+      "headers": {
+        "Authorization": "Bearer mcp_GfK3M1NU4ONowTVCNsyrNpR0KHws5wPvp4Xx1FXYuSg"
+      },
+      "enabled": true
+    }
+  }
+}

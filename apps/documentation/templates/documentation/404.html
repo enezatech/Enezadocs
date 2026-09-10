@@ -1,0 +1,22 @@
+{% extends "documentation/base.html" %}
+{% load home_tags %}
+
+{% block title %}Not found · {{ site.name }}{% endblock %}
+
+{% block content %}
+<div class="grid flex-1 min-h-0 lg:grid-cols-[320px_1fr_280px]">
+  {% include "documentation/components/sidebar_panels.html" %}
+
+  <div class="relative min-w-0 flex flex-col min-h-0">
+    <main id="content" class="flex-1 overflow-y-auto scroll-col">
+      <div style="padding:2rem 2rem 4rem;max-width:900px;margin:0 auto">
+        <h1 class="text-3xl font-semibold tracking-tight">Not found</h1>
+        <p class="text-muted mt-3">There isn't a page at <code class="mono">/docs/{{ site.slug }}/{{ current_path|doc_url }}/</code>.</p>
+        <a href="/docs/{{ site.slug }}/" class="inline-block mt-6 text-sm font-medium" style="color:var(--accent-fg)">Go to the documentation home</a>
+      </div>
+    </main>
+  </div>
+
+  <aside class="hidden lg:block border-l border-line"></aside>
+</div>
+{% endblock %}

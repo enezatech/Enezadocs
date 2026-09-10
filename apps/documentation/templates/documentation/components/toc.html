@@ -1,0 +1,12 @@
+<aside id="toc" class="hidden lg:block border-l border-line bg-bg min-h-0">
+  <div class="h-full overflow-y-auto scroll-col py-6 pr-3 pl-2">
+    <div class="text-[13px] uppercase tracking-wider text-muted font-semibold mb-3 px-2">On this page</div>
+    <ul id="tocList" class="border-l border-line">
+      {% for heading in document.headings %}
+      <li data-target="{{ heading.id }}">
+        <a href="javascript:void(0)" class="block border-l-2 -ml-px border-transparent px-3 py-1 text-[14px] {% if heading.level == 2 %}font-medium text-ink{% else %}text-muted ml-3{% endif %} hover:text-ink transition-colors">{{ heading.text }}</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</aside>

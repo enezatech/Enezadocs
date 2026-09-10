@@ -1,0 +1,43 @@
+{% extends "documentation/base.html" %}
+{% load static %}
+
+{% block title %}{{ document.title }} · {{ site.name }}{% endblock %}
+
+{% block content %}
+<div class="grid flex-1 min-h-0 {% if document.headings %}lg:grid-cols-[320px_1fr_280px]{% else %}lg:grid-cols-[320px_1fr]{% endif %}">
+  {% include "documentation/components/sidebar_panels.html" %}
+
+  <div class="relative min-w-0 flex flex-col min-h-0">
+    <main id="content" class="flex-1 overflow-y-auto scroll-col">
+      <div id="articleWrap" style="padding:clamp(1.5rem,4vw,3.5rem) 4vw 4rem" class="reveal">
+        {% include "documentation/components/breadcrumbs.html" %}
+        <article id="article" class="prose">{{ document.html|safe }}</article>
+        {% if document.source_url or document.edit_url %}
+        <div class="text-sm text-muted mt-6 flex gap-4">
+          {% if document.source_url %}<a href="{{ document.source_url }}" target="_blank" rel="noopener" class="hover:text-ink">View source</a>{% endif %}
+          {% if document.edit_url %}<a href="{{ document.edit_url }}" target="_blank" rel="noopener" class="hover:text-ink">Edit this page</a>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+      <footer class="border-t border-line">
+        <div class="max-w-4xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <div class="font-semibold tracking-tight">{{ site.name }}</div>
+            <div class="text-sm text-muted">{{ site.description }}</div>
+          </div>
+          {% include "documentation/components/prev_next.html" %}
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  {% if document.headings %}{% include "documentation/components/toc.html" %}{% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if 'class="mermaid"' in document.html %}
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script src="{% static 'documentation/js/mermaid.js' %}"></script>
+{% endif %}
+{% endblock %}

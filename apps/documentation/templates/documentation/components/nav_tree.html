@@ -1,0 +1,32 @@
+{% load home_tags %}
+{% for node in nodes %}
+  {% if node.type == 'document' and node.children %}
+  <div class="nav-group{% if node.key in open_keys %} open{% endif %}">
+    <div class="nav-page-row">
+      <a href="/docs/{{ site.slug }}/{{ node.path|doc_url }}/" data-close-drawer class="nav-link nav-page-link relative flex items-center rounded-lg px-3 py-[7px] text-[15px] text-muted hover:text-ink hover:bg-bgsoft transition-colors{% if node.path == current_path %} current{% endif %}">{{ node.title }}</a>
+      <button type="button" class="nav-page-toggle" aria-label="Toggle sub-pages">
+        <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg>
+      </button>
+    </div>
+    <div class="nav-sub"><div>
+      <div class="relative ml-1">
+        {% include "documentation/components/nav_tree.html" with nodes=node.children %}
+      </div>
+    </div></div>
+  </div>
+  {% elif node.type == 'folder' %}
+  <div class="nav-group{% if node.key in open_keys %} open{% endif %}">
+    <button class="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[14px] font-medium text-ink hover:bg-bgsoft transition-colors">
+      <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg>
+      <span class="flex-1">{{ node.title }}</span>
+    </button>
+    <div class="nav-sub"><div>
+      <div class="relative ml-1">
+        {% include "documentation/components/nav_tree.html" with nodes=node.children %}
+      </div>
+    </div></div>
+  </div>
+  {% else %}
+  <a href="/docs/{{ site.slug }}/{{ node.path|doc_url }}/" data-close-drawer class="nav-link relative flex items-center rounded-lg px-3 py-[7px] text-[15px] text-muted hover:text-ink hover:bg-bgsoft transition-colors{% if node.path == current_path %} current{% endif %}">{{ node.title }}</a>
+  {% endif %}
+{% endfor %}

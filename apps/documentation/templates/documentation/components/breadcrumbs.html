@@ -1,0 +1,11 @@
+{% load home_tags %}
+<nav id="breadcrumb" class="text-sm text-muted mb-2 flex items-center gap-1 flex-wrap">
+  {% for crumb in document.breadcrumbs %}
+    {% if not forloop.first %}<span class="mx-1 opacity-50">/</span>{% endif %}
+    {% if crumb.path == current_path %}
+    <span class="text-ink font-medium">{{ crumb.title }}</span>
+    {% else %}
+    <a href="{% if crumb.path %}/docs/{{ site.slug }}/{{ crumb.path|doc_url }}/{% else %}/docs/{{ site.slug }}/{% endif %}" class="hover:text-ink transition-colors">{{ crumb.title }}</a>
+    {% endif %}
+  {% endfor %}
+</nav>

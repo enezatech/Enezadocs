@@ -1,0 +1,16 @@
+env/
+.venv/
+venv/
+.git/
+.gitignore
+__pycache__/
+*.py[cod]
+db.sqlite3
+media/
+staticfiles/
+.env
+.env.*
+.kilo/
+test/
+plans/
+docker-compose.override.yml

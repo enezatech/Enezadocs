@@ -1,0 +1,48 @@
+name: enezadocs
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-enezadocs}
+      POSTGRES_USER: ${POSTGRES_USER:-enezadocs}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER:-enezadocs} -d ${POSTGRES_DB:-enezadocs}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  web:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_ENGINE: ${DB_ENGINE:-postgres}
+      DATABASE_URL: ${DATABASE_URL:-postgres://enezadocs:enezadocs@db:5432/enezadocs}
+      DJANGO_STATIC_ROOT: /app/staticfiles
+      DJANGO_MEDIA_ROOT: /app/media
+      FASTEMBED_CACHE_PATH: /cache/fastembed
+    ports:
+      - "${WEB_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - media_data:/app/media
+      - static_data:/app/staticfiles
+      - docs_data:/app/docs
+      - fastembed_cache:/cache
+
+volumes:
+  pgdata:
+  media_data:
+  static_data:
+  docs_data:
+  fastembed_cache:
