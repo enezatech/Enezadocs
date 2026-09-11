@@ -25,6 +25,22 @@ def _env_path(name: str, default: Path) -> Path:
     return Path(value).expanduser() if value else default
 
 
+def _env_hosts(name: str) -> list[str]:
+    """Parse a comma-separated host list, dropping any ':port' suffix.
+
+    Django matches ALLOWED_HOSTS against the host without the port, so an
+    entry like 'docs.example.com:8000' would never match.
+    """
+    hosts = []
+    for value in os.environ.get(name, "").split(","):
+        value = value.strip()
+        if not value:
+            continue
+        host, _, port = value.rpartition(":")
+        hosts.append(host if host and port.isdigit() else value)
+    return hosts
+
+
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
     "django-insecure-enezadocs-dev-only-change-me",
@@ -32,11 +48,11 @@ SECRET_KEY = os.environ.get(
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 
-ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if h]
+ALLOWED_HOSTS = _env_hosts("DJANGO_ALLOWED_HOSTS")
 if not ALLOWED_HOSTS:
     # Coolify injects COOLIFY_FQDN into the container at runtime; it follows the
-    # resource's domain configuration, unlike the SERVICE_* magic variables.
-    ALLOWED_HOSTS = [h for h in os.environ.get("COOLIFY_FQDN", "").split(",") if h]
+    # resource's domain configuration. _env_hosts drops any ':port' suffix.
+    ALLOWED_HOSTS = _env_hosts("COOLIFY_FQDN")
 if not ALLOWED_HOSTS:
     ALLOWED_HOSTS = ["*"]
 
@@ -94,6 +110,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "documentation.context_processors.site_branding",
             ],
         },
     },

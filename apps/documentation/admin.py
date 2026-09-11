@@ -455,7 +455,7 @@ class HomeUpdateInline(admin.TabularInline):
 @admin.register(HomePage)
 class HomePageAdmin(admin.ModelAdmin):
     fieldsets = (
-        ("Branding", {"fields": ("brand_name",)}),
+        ("Branding", {"fields": ("brand_name", "favicon")}),
         ("Hero", {"fields": ("hero_eyebrow", "hero_title", "hero_subtitle")}),
         (
             "Quick install",

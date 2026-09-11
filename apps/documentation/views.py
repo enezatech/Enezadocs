@@ -1,7 +1,8 @@
+import mimetypes
 from collections import Counter
 from urllib.parse import quote
 
-from django.http import HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
@@ -320,5 +321,21 @@ class AssetProxyView(View):
             return HttpResponse(status=404)
         data, content_type = asset
         response = HttpResponse(data, content_type=content_type)
+        response["Cache-Control"] = "public, max-age=86400"
+        return response
+
+
+class FaviconView(View):
+    def get(self, request):
+        home = HomePage.load()
+        if not home.favicon:
+            raise Http404
+        content_type = (
+            mimetypes.guess_type(home.favicon.name)[0] or "image/x-icon"
+        )
+        response = FileResponse(
+            home.favicon.open("rb"),
+            content_type=content_type,
+        )
         response["Cache-Control"] = "public, max-age=86400"
         return response

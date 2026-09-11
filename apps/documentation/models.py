@@ -411,6 +411,13 @@ class HomePage(models.Model):
         default="Enezadocs",
         verbose_name="brand name",
     )
+    favicon = models.ImageField(
+        upload_to="documentation/branding/",
+        blank=True,
+        null=True,
+        verbose_name="favicon",
+        help_text="Browser tab icon (PNG, ICO or SVG). Recommended 32x32 or larger.",
+    )
     hero_eyebrow = models.CharField(
         max_length=100,
         default="Documentation hub",
