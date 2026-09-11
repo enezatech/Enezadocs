@@ -32,13 +32,25 @@ SECRET_KEY = os.environ.get(
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 
-ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",") if h]
+ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if h]
+if not ALLOWED_HOSTS:
+    # Coolify injects COOLIFY_FQDN into the container at runtime; it follows the
+    # resource's domain configuration, unlike the SERVICE_* magic variables.
+    ALLOWED_HOSTS = [h for h in os.environ.get("COOLIFY_FQDN", "").split(",") if h]
+if not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ["*"]
 
 CSRF_TRUSTED_ORIGINS = [
     origin
     for origin in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
     if origin
 ]
+if not CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS = [
+        origin
+        for origin in os.environ.get("COOLIFY_URL", "").split(",")
+        if origin
+    ]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
