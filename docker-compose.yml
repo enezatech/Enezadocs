@@ -22,7 +22,17 @@ services:
   web:
     build: .
     restart: unless-stopped
+    # Load the full .env into the container (DEBUG, SECRET_KEY, SSO, MCP, search
+    # tuning, ...). Optional so Coolify, which injects env vars itself, still
+    # deploys when no .env file is present. Explicit `environment` entries below
+    # take precedence over env_file.
+    env_file:
+      - path: .env
+        required: false
     environment:
+      # DEBUG defaults off for the Docker deployment; set DJANGO_DEBUG=1 in .env to
+      # override for local compose debugging.
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-0}
       # Domain is configured in Coolify's service "Domains" field (no SERVICE_*
       # magic variables, which Coolify injects into every service including db).
       # The app reads the domain from the runtime COOLIFY_FQDN / COOLIFY_URL.

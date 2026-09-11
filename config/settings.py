@@ -120,12 +120,19 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 DB_ENGINE = os.environ.get("DB_ENGINE", "sqlite").strip().lower()
 
-if not DEBUG and DB_ENGINE in ("postgres", "postgresql"):
+if DB_ENGINE in ("postgres", "postgresql"):
     import dj_database_url
+    from django.core.exceptions import ImproperlyConfigured
+
+    _database_url = os.environ.get("DATABASE_URL", "").strip()
+    if not _database_url:
+        raise ImproperlyConfigured(
+            "DB_ENGINE=postgres requires DATABASE_URL to be set.",
+        )
 
     DATABASES = {
         "default": dj_database_url.parse(
-            os.environ["DATABASE_URL"],
+            _database_url,
             conn_max_age=600,
             conn_health_checks=True,
         )
