@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-enezadocs}
       POSTGRES_USER: ${POSTGRES_USER:-enezadocs}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_PASSWORD: ${SERVICE_PASSWORD_POSTGRES}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -22,15 +22,17 @@ services:
   web:
     build: .
     restart: unless-stopped
-    env_file: .env
     environment:
-      DB_ENGINE: ${DB_ENGINE:-postgres}
-      DATABASE_URL: ${DATABASE_URL:-postgres://enezadocs:enezadocs@db:5432/enezadocs}
+      # Editable domain in the Coolify UI; routes the proxy to container port 8000.
+      SERVICE_FQDN_WEB_8000: /
+      SERVICE_URL_WEB_8000: /
+      DJANGO_ALLOWED_HOSTS: ${SERVICE_FQDN_WEB_8000}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${SERVICE_URL_WEB_8000}
+      DB_ENGINE: postgres
+      DATABASE_URL: postgres://${POSTGRES_USER:-enezadocs}:${SERVICE_PASSWORD_POSTGRES}@db:5432/${POSTGRES_DB:-enezadocs}
       DJANGO_STATIC_ROOT: /app/staticfiles
       DJANGO_MEDIA_ROOT: /app/media
       FASTEMBED_CACHE_PATH: /cache/fastembed
-    ports:
-      - "${WEB_PORT:-8000}:8000"
     depends_on:
       db:
         condition: service_healthy
