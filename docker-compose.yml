@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-enezadocs}
       POSTGRES_USER: ${POSTGRES_USER:-enezadocs}
-      POSTGRES_PASSWORD: ${SERVICE_PASSWORD_POSTGRES}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required (see .env.sample)}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -38,7 +38,7 @@ services:
       DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-}
       DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-}
       DB_ENGINE: postgres
-      DATABASE_URL: postgres://${POSTGRES_USER:-enezadocs}:${SERVICE_PASSWORD_POSTGRES}@db:5432/${POSTGRES_DB:-enezadocs}
+      DATABASE_URL: postgres://${POSTGRES_USER:-enezadocs}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required (see .env.sample)}@db:5432/${POSTGRES_DB:-enezadocs}
       DJANGO_STATIC_ROOT: /app/staticfiles
       DJANGO_MEDIA_ROOT: /app/media
       FASTEMBED_CACHE_PATH: /cache/fastembed

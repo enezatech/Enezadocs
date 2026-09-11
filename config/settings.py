@@ -240,6 +240,18 @@ DOCS_S3 = {
 }
 DOCS_S3["ENABLED"] = bool(DOCS_S3["BUCKET"])
 
+if DOCS_S3["ENABLED"]:
+    _s3_has_key = bool(DOCS_S3["ACCESS_KEY_ID"])
+    _s3_has_secret = bool(DOCS_S3["SECRET_ACCESS_KEY"])
+    if _s3_has_key != _s3_has_secret:
+        from django.core.exceptions import ImproperlyConfigured
+
+        raise ImproperlyConfigured(
+            "DOCS_S3_ACCESS_KEY_ID and DOCS_S3_SECRET_ACCESS_KEY must be set together "
+            "when DOCS_S3_BUCKET is configured (set both, or leave both blank to use "
+            "the default credential chain).",
+        )
+
 DOCS_SEMANTIC_SEARCH = {
     "ENABLED": os.environ.get("DOCS_SEMANTIC_SEARCH_ENABLED", "1") == "1",
     "LEXICAL_BACKEND": os.environ.get("DOCS_SEMANTIC_LEXICAL_BACKEND", "fts5"),

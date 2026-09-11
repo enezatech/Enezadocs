@@ -198,9 +198,33 @@ Enezadocs/
 
 5. **Persistent data**
 
-   Named volumes keep state across restarts: `pgdata` (database), `media_data`,
-   `static_data`, `docs_data` (documentation content), and `fastembed_cache`
-   (embedding model cache).
+   Named volumes keep state across restarts and updates: `pgdata` (database),
+   `media_data` (uploaded media), `static_data` (collected static files), `docs_data`
+   (documentation content), and `fastembed_cache` (embedding model cache).
+
+   Updating the app (`docker compose build` then `docker compose up -d`) reuses these
+   volumes and never resets them. They are removed **only** by destructive commands:
+
+   - `docker compose down -v` (or `--volumes`)
+   - `docker volume rm enezadocs_pgdata` (and the other named volumes)
+   - `docker volume prune` / `docker system prune --volumes`
+
+   Never run those against a production stack. On Coolify, keep the option that removes
+   volumes on redeploy disabled.
+
+   Non-regenerable content lives in `pgdata`, `media_data`, and `docs_data`; back it up
+   before any destructive operation. `static_data` (repopulated by `collectstatic`) and
+   `fastembed_cache` (re-downloaded on demand) are regenerable.
+
+   `POSTGRES_PASSWORD` is captured when the `pgdata` volume is first created and must
+   stay stable. Changing it later does not update the role inside the database, so the app
+   stops connecting even though the data is intact; to change it, run
+   `ALTER USER <user> WITH PASSWORD '<new>'` inside the `db` container.
+
+   > **Note:** `docs_data` is populated from the image's `docs/` folder only when the
+   > volume is first created. Updating the image does not refresh documentation already
+   > stored in the volume — run `sync_docs` / re-import, or use a bind mount, if the
+   > bundled `docs/` must track the image.
 
 > **Reverse proxy / HTTPS:** the compose file does not include a TLS terminator. Put
 > Nginx, Caddy, or a cloud load balancer in front of `web` in production and enable the
