@@ -7,7 +7,7 @@ from .github import GitHubClient
 from .search import build_index
 
 
-def _invalidate(source):
+def invalidate_source(source):
     delete_pattern = getattr(cache, "delete_pattern", None)
     if delete_pattern is None:
         cache.clear()
@@ -100,7 +100,7 @@ def sync_source(source):
         source.save(update_fields=["last_sync_status", "last_sync_error", "last_sync_at"])
         return
 
-    _invalidate(source)
+    invalidate_source(source)
 
     try:
         rebuild_structure_for_source(source)

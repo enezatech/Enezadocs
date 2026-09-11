@@ -146,6 +146,11 @@ Enezadocs/
    pointing at an `owner/repository`) and a `DocumentationSite` that uses it. Then open
    `http://127.0.0.1:8000/docs/<slug>/`.
 
+   For a LOCAL source you can also add pages from the admin: open the site and use
+   **Upload markdown** to write `.md` files into the source root or an existing
+   section/group folder (filesystem or S3-backed). Navigation and search refresh
+   automatically after each upload.
+
 ### Option B — Docker (Production, PostgreSQL)
 
 1. **Create the environment file**

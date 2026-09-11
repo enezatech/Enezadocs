@@ -151,3 +151,14 @@ class S3DocumentationProvider:
 
     def get_edit_url(self, path: str) -> str | None:
         return None
+
+    def save_document(self, path: str, content: bytes) -> None:
+        try:
+            self.client.put_object(
+                Bucket=self.bucket,
+                Key=self._key(f"{path}.md"),
+                Body=content,
+                ContentType="text/markdown; charset=utf-8",
+            )
+        except Exception as exc:
+            raise ProviderUnavailable(str(exc)) from exc

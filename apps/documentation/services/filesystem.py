@@ -66,3 +66,8 @@ class LocalDocumentationProvider:
 
     def get_edit_url(self, path: str) -> str | None:
         return None
+
+    def save_document(self, path: str, content: bytes) -> None:
+        target = self._safe_path(f"{path}.md")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(content)

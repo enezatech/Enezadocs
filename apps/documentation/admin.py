@@ -5,6 +5,9 @@ from pathlib import Path
 from django import forms
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
+from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404, render
+from django.urls import path, reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
@@ -26,7 +29,7 @@ from .models import (
 from .services.factory import get_provider
 from .services.mcp_tokens import generate_token, hash_token
 from .services.structure import rebuild_from_provider_tree
-from .services.sync import sync_source
+from .services.sync import invalidate_source, rebuild_index_for_source, sync_source
 
 
 @admin.action(description="Sync documentation")
@@ -119,6 +122,88 @@ class DocumentationSourceAdmin(admin.ModelAdmin):
     actions = [sync_documentation]
 
 
+def _clean_markdown_filename(name):
+    clean = (name or "").strip()
+    if not clean:
+        raise ValidationError("A filename is required.")
+    if "/" in clean or "\\" in clean or ".." in clean:
+        raise ValidationError("Filename must not contain path separators.")
+    if not clean.lower().endswith(".md"):
+        clean += ".md"
+    return clean
+
+
+class MultipleFileInput(forms.FileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    """A FileField that accepts and validates a list of uploaded files."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single = super().clean
+        if isinstance(data, (list, tuple)):
+            if not data:
+                if self.required:
+                    raise ValidationError(
+                        self.error_messages["required"],
+                        code="required",
+                    )
+                return []
+            return [single(item, initial) for item in data]
+        return [single(data, initial)]
+
+
+class MarkdownUploadForm(forms.Form):
+    target_node = forms.ModelChoiceField(
+        queryset=DocumentationNode.objects.none(),
+        required=False,
+        empty_label="Site root",
+        label="Target folder",
+        help_text="Documents are written into the selected section/group folder.",
+    )
+    files = MultipleFileField(
+        label="Markdown files",
+        help_text="One or more .md files; each keeps its uploaded filename.",
+    )
+    filename = forms.CharField(
+        required=False,
+        label="Filename",
+        help_text="Only used when a single file is uploaded.",
+    )
+    overwrite = forms.BooleanField(
+        required=False,
+        label="Overwrite existing file",
+    )
+
+    def __init__(self, *args, site=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if site is not None:
+            self.fields["target_node"].queryset = DocumentationNode.objects.filter(
+                site=site,
+                enabled=True,
+                type__in=NODE_FOLDER_TYPES,
+            ).order_by("order", "id")
+
+    def clean(self):
+        cleaned = super().clean()
+        files = cleaned.get("files") or []
+        if not files:
+            raise ValidationError("Select at least one markdown file.")
+        single = len(files) == 1
+        for uploaded in files:
+            if single:
+                name = (cleaned.get("filename") or "").strip() or uploaded.name
+            else:
+                name = uploaded.name
+            _clean_markdown_filename(name)
+        return cleaned
+
+
 @admin.register(DocumentationSite)
 class DocumentationSiteAdmin(admin.ModelAdmin):
     list_display = ("name", "slug", "category", "icon", "featured", "order", "source", "enabled")
@@ -127,6 +212,104 @@ class DocumentationSiteAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
     list_editable = ("category", "icon", "featured", "order")
     actions = [import_structure]
+    change_form_template = "admin/documentation/documentationsite/change_form.html"
+
+    def get_urls(self):
+        custom = [
+            path(
+                "<path:object_id>/upload-markdown/",
+                self.admin_site.admin_view(self.upload_markdown),
+                name="documentation_documentationsite_upload_markdown",
+            ),
+        ]
+        return custom + super().get_urls()
+
+    def _change_url(self, site):
+        return reverse(
+            "admin:documentation_documentationsite_change",
+            args=[site.pk],
+        )
+
+    def upload_markdown(self, request, object_id):
+        site = get_object_or_404(self.get_queryset(request), pk=object_id)
+        source = site.source
+        if source.source_type != DocumentationSource.SourceType.LOCAL:
+            self.message_user(
+                request,
+                "Markdown upload is only available for local documentation sources.",
+                messages.ERROR,
+            )
+            return HttpResponseRedirect(self._change_url(site))
+
+        form = MarkdownUploadForm(
+            request.POST or None,
+            request.FILES or None,
+            site=site,
+        )
+        if request.method == "POST" and form.is_valid():
+            provider = get_provider(source)
+            node = form.cleaned_data.get("target_node")
+            folder = (getattr(node, "path", "") or "").strip("/\\")
+            uploaded = form.cleaned_data.get("files") or []
+            overwrite = form.cleaned_data.get("overwrite")
+            successes = 0
+            for item in uploaded:
+                if len(uploaded) == 1:
+                    raw_name = (form.cleaned_data.get("filename") or "").strip() or item.name
+                else:
+                    raw_name = item.name
+                try:
+                    name = _clean_markdown_filename(raw_name)
+                    doc_path = f"{folder}/{name}" if folder else name
+                    if provider.exists(doc_path) and not overwrite:
+                        self.message_user(
+                            request,
+                            f"{name}: already exists (tick overwrite to replace).",
+                            messages.ERROR,
+                        )
+                        continue
+                    provider.save_document(doc_path, item.read())
+                except Exception as exc:
+                    self.message_user(
+                        request,
+                        f"{item.name}: {exc}",
+                        messages.ERROR,
+                    )
+                    continue
+                successes += 1
+
+            if successes:
+                try:
+                    invalidate_source(source)
+                    rebuild_index_for_source(source)
+                except Exception as exc:
+                    self.message_user(
+                        request,
+                        f"Uploaded {successes} document(s), but the search index "
+                        f"rebuild failed: {exc}",
+                        messages.WARNING,
+                    )
+                else:
+                    self.message_user(
+                        request,
+                        f"Uploaded {successes} document(s). Navigation and search "
+                        "refreshed.",
+                        messages.SUCCESS,
+                    )
+            return HttpResponseRedirect(self._change_url(site))
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": f"Upload markdown — {site.name}",
+            "form": form,
+            "site": site,
+            "opts": self.model._meta,
+        }
+        return render(
+            request,
+            "admin/documentation/documentationsite/upload_markdown.html",
+            context,
+        )
 
 
 NODE_FOLDER_TYPES = (

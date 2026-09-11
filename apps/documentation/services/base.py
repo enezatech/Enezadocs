@@ -68,3 +68,7 @@ class DocumentationProvider(Protocol):
 
     def get_edit_url(self, path: str) -> str | None:
         ...
+
+    def save_document(self, path: str, content: bytes) -> None:
+        """Persist markdown at the provider-relative ``path`` (without ``.md``)."""
+        ...

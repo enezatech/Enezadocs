@@ -30,6 +30,9 @@ class NullProvider:
     def get_edit_url(self, path):
         return None
 
+    def save_document(self, path, content):
+        raise ProviderUnavailable("Source is not writable.")
+
 
 class DocumentationService:
     def __init__(self, site, authenticated=True):
