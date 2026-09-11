@@ -26,8 +26,11 @@ services:
       # Editable domain in the Coolify UI; routes the proxy to container port 8000.
       SERVICE_FQDN_WEB_8000: /
       SERVICE_URL_WEB_8000: /
-      DJANGO_ALLOWED_HOSTS: ${SERVICE_FQDN_WEB_8000}
-      DJANGO_CSRF_TRUSTED_ORIGINS: ${SERVICE_URL_WEB_8000}
+      # Use Coolify's predefined domain values instead of SERVICE_* magic vars.
+      # SERVICE_URL/FQDN vars go stale after a UI domain change (coolify#8912),
+      # COOLIFY_FQDN/COOLIFY_URL always follow the resource's domain configuration.
+      DJANGO_ALLOWED_HOSTS: ${COOLIFY_FQDN}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${COOLIFY_URL}
       DB_ENGINE: postgres
       DATABASE_URL: postgres://${POSTGRES_USER:-enezadocs}:${SERVICE_PASSWORD_POSTGRES}@db:5432/${POSTGRES_DB:-enezadocs}
       DJANGO_STATIC_ROOT: /app/staticfiles
