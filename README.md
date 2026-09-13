@@ -1,3 +1,7 @@
+---
+menu name: Get started 
+position: 6
+---
 # Enezadocs
 
 A self-hosted documentation platform that renders Markdown from **local folders** and
@@ -33,16 +37,16 @@ your coding agent to read your documentation directly.
 
 ## Tech stack
 
-| Layer | Technology |
-| --- | --- |
-| Backend | Django 6.1, Python 3.13 |
-| ASGI server | Uvicorn (`config.asgi:application`) |
-| Database | SQLite (development) / PostgreSQL 16 (production) |
-| Markdown | `markdown`, `python-frontmatter`, `Pygments`, `nh3` |
-| Search | SQLite FTS5 / BM25 + `fastembed` embeddings |
-| Auth | `django-allauth` (email + GitHub/Google SSO) |
-| Static files | WhiteNoise |
-| Object storage (optional) | Any S3-compatible endpoint (`boto3`) |
+| Layer                     | Technology                                          |
+| ------------------------- | --------------------------------------------------- |
+| Backend                   | Django 6.1, Python 3.13                             |
+| ASGI server               | Uvicorn (`config.asgi:application`)                 |
+| Database                  | SQLite (development) / PostgreSQL 16 (production)   |
+| Markdown                  | `markdown`, `python-frontmatter`, `Pygments`, `nh3` |
+| Search                    | SQLite FTS5 / BM25 + `fastembed` embeddings         |
+| Auth                      | `django-allauth` (email + GitHub/Google SSO)        |
+| Static files              | WhiteNoise                                          |
+| Object storage (optional) | Any S3-compatible endpoint (`boto3`)                |
 
 ## Project layout
 
@@ -237,16 +241,16 @@ Enezadocs/
 All settings are read from environment variables; `.env.sample` documents every option.
 Key groups:
 
-| Group | Variables |
-| --- | --- |
-| Core | `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS` |
-| Database | `DB_ENGINE`, `DATABASE_URL`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` |
-| Security | `DJANGO_SECURE_SSL_REDIRECT`, `DJANGO_SESSION_COOKIE_SECURE`, `DJANGO_CSRF_COOKIE_SECURE`, `DJANGO_SECURE_HSTS_*`, `DJANGO_X_FRAME_OPTIONS` |
-| Paths / storage | `DJANGO_STATIC_ROOT`, `DJANGO_MEDIA_ROOT`, `FASTEMBED_CACHE_PATH` |
-| Auth / SSO | `GITHUB_CLIENT_ID`, `GITHUB_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_SECRET`, `GITHUB_TOKEN` |
-| MCP | `MCP_ENABLED`, `MCP_PATH`, `MCP_MAX_CONTENT_CHARS` |
-| Search | `DOCS_SEMANTIC_*`, `DOCS_CACHE_*` |
-| S3 (optional) | `DOCS_S3_ENABLED`, `DOCS_S3_BUCKET`, `DOCS_S3_PREFIX`, `DOCS_S3_REGION`, `DOCS_S3_ENDPOINT_URL`, `DOCS_S3_ACCESS_KEY_ID`, `DOCS_S3_SECRET_ACCESS_KEY`, `DOCS_S3_USE_PATH_STYLE` (`DOCS_S3_ENABLED`: 1 force S3, 0 force local, blank = S3 when the bucket is set) |
+| Group           | Variables                                                                                                                                                                                                                                                         |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Core            | `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS`                                                                                                                                                                        |
+| Database        | `DB_ENGINE`, `DATABASE_URL`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`                                                                                                                                                                                  |
+| Security        | `DJANGO_SECURE_SSL_REDIRECT`, `DJANGO_SESSION_COOKIE_SECURE`, `DJANGO_CSRF_COOKIE_SECURE`, `DJANGO_SECURE_HSTS_*`, `DJANGO_X_FRAME_OPTIONS`                                                                                                                       |
+| Paths / storage | `DJANGO_STATIC_ROOT`, `DJANGO_MEDIA_ROOT`, `FASTEMBED_CACHE_PATH`                                                                                                                                                                                                 |
+| Auth / SSO      | `GITHUB_CLIENT_ID`, `GITHUB_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_SECRET`, `GITHUB_TOKEN`                                                                                                                                                                          |
+| MCP             | `MCP_ENABLED`, `MCP_PATH`, `MCP_MAX_CONTENT_CHARS`                                                                                                                                                                                                                |
+| Search          | `DOCS_SEMANTIC_*`, `DOCS_CACHE_*`                                                                                                                                                                                                                                 |
+| S3 (optional)   | `DOCS_S3_ENABLED`, `DOCS_S3_BUCKET`, `DOCS_S3_PREFIX`, `DOCS_S3_REGION`, `DOCS_S3_ENDPOINT_URL`, `DOCS_S3_ACCESS_KEY_ID`, `DOCS_S3_SECRET_ACCESS_KEY`, `DOCS_S3_USE_PATH_STYLE` (`DOCS_S3_ENABLED`: 1 force S3, 0 force local, blank = S3 when the bucket is set) |
 
 ---
 

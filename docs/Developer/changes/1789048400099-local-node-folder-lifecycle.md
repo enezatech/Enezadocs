@@ -1,3 +1,8 @@
+---
+menu name: Local Node Folder Lifecycle
+position: 5
+---
+
 # Planure: Local Node Folder Lifecycle (create on section/group, lock root, delete with content)
 
 ## Feature Overview

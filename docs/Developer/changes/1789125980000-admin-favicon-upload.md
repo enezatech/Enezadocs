@@ -1,3 +1,8 @@
+---
+menu name: Admin Favicon Upload
+position: 7
+---
+
 # Change: Admin favicon upload
 
 **Date:** 2026-09-11

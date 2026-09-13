@@ -1,3 +1,8 @@
+---
+menu name: MCP Content Pagination
+position: 3
+---
+
 # Planure: MCP Content Pagination (fix truncation on large pages)
 
 > Status: **Implemented**. The authoritative planure lives at

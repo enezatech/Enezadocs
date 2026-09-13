@@ -1,3 +1,8 @@
+---
+menu name: Harden Postgres Credentials
+position: 9
+---
+
 # Plan: Harden credentials and guarantee file persistence across updates
 
 ## Goal

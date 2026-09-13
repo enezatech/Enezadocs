@@ -1,3 +1,8 @@
+---
+menu name: Harden Credentials & File Persistence
+position: 8
+---
+
 # Change: Harden credentials and guarantee file persistence across updates
 
 **Date:** 2026-09-11

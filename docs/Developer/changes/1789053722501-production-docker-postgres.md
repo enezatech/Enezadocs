@@ -1,3 +1,8 @@
+---
+menu name: Production Docker + PostgreSQL
+position: 6
+---
+
 # Planure: Production Docker + PostgreSQL + Security Environment
 
 > **Note:** the project convention is `feature_Planure/feature_Planure_production_docker_postgres.md`,

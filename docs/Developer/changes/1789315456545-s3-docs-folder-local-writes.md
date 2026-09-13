@@ -1,3 +1,8 @@
+---
+menu name: S3 vs Local Documentation Storage
+position: 11
+---
+
 # Change: Reliable S3-vs-Local Documentation Storage
 
 **Date:** 2026-09-13

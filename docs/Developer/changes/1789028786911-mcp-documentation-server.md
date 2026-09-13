@@ -1,3 +1,8 @@
+---
+menu name: MCP Documentation Server
+position: 2
+---
+
 # Planure: MCP Documentation Server (database-backed, scoped)
 
 > Status: **Implemented**. The authoritative planure lives at

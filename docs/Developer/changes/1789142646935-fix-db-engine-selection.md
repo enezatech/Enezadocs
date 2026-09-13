@@ -1,3 +1,8 @@
+---
+menu name: Fix DB Engine Selection
+position: 10
+---
+
 # Change: Fix DB_ENGINE=postgres being silently ignored
 
 **Date:** 2026-09-11

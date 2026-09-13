@@ -1,3 +1,8 @@
+---
+menu name: Hybrid Semantic Search
+position: 4
+---
+
 # Planure: Hybrid Semantic Search (FTS5/BM25 + local embeddings)
 
 > Status: **Implemented**. The authoritative planure lives at
