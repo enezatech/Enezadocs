@@ -320,15 +320,16 @@ NODE_FOLDER_TYPES = (
 
 
 def _is_local_node(node):
+    """True for section/group nodes that belong to a LOCAL source.
+
+    The backing store (local filesystem or S3) is selected by ``s3_enabled()``.
+    """
     if node.type not in NODE_FOLDER_TYPES:
         return False
     site = node.site
     if site is None or site.source is None:
         return False
-    return (
-        site.source.source_type == DocumentationSource.SourceType.LOCAL
-        and not s3_enabled()
-    )
+    return site.source.source_type == DocumentationSource.SourceType.LOCAL
 
 
 def _local_root(site):
@@ -367,6 +368,9 @@ def _auto_node_path(title, parent):
 
 
 def _create_node_folder(node):
+    if s3_enabled():
+        get_provider(node.site.source).create_folder(node.path)
+        return
     root = _local_root(node.site)
     if not root.is_dir():
         raise ValidationError({"path": f"Documentation root does not exist: {root}"})
@@ -389,16 +393,26 @@ def _has_other_node_for_folder(node, target, exclude_ids=frozenset()):
 
 
 def _delete_node_folder(node, exclude_ids=frozenset()):
-    """Remove the node's folder and its content.
+    """Remove the node's folder or its S3 folder marker.
+
+    With S3 selected, only the ``<path>/`` marker object is deleted; markdown
+    objects under the prefix are left in place. With local storage, the folder
+    and its content are removed.
 
     Returns a warning string when removal is deliberately skipped (missing
     path, root target, or a folder shared with another node); returns None when
-    the folder was removed or no filesystem action applies. Real filesystem
-    errors (e.g. permission denied) propagate so the caller can block the DB
+    the folder was removed or no action applies. Real storage errors (e.g.
+    permission denied, S3 failure) propagate so the caller can block the DB
     delete. ``exclude_ids`` lists nodes being deleted in the same batch so they
     are not treated as other owners of the folder.
     """
     if not _is_local_node(node):
+        return None
+    if s3_enabled():
+        try:
+            get_provider(node.site.source).delete_folder(node.path)
+        except Exception as exc:
+            return f"Could not remove S3 folder marker for {node.path}: {exc}"
         return None
     try:
         root = _local_root(node.site)
@@ -448,7 +462,7 @@ class DocumentationNodeAdminForm(forms.ModelForm):
                         _create_node_folder(probe)
                     except ValidationError:
                         raise
-                    except OSError as exc:
+                    except Exception as exc:
                         raise ValidationError(
                             {"path": f"Could not create folder: {exc}"},
                         )

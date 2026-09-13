@@ -78,6 +78,12 @@ class S3DocumentationProvider:
         rel = (rel_path or "").strip("/")
         return f"{self.prefix}/{rel}" if self.prefix else rel
 
+    def _folder_key(self, rel_path: str) -> str:
+        rel = (rel_path or "").strip("/")
+        if not rel:
+            return f"{self.prefix}/" if self.prefix else ""
+        return f"{self.prefix}/{rel}/" if self.prefix else f"{rel}/"
+
     @staticmethod
     def _is_missing(exc: Exception) -> bool:
         response = getattr(exc, "response", None) or {}
@@ -164,5 +170,28 @@ class S3DocumentationProvider:
                 Body=content,
                 ContentType="text/markdown; charset=utf-8",
             )
+        except Exception as exc:
+            raise ProviderUnavailable(str(exc)) from exc
+
+    def create_folder(self, path: str) -> None:
+        key = self._folder_key(path)
+        if not key:
+            return
+        try:
+            self.client.put_object(
+                Bucket=self.bucket,
+                Key=key,
+                Body=b"",
+                ContentType="application/x-directory",
+            )
+        except Exception as exc:
+            raise ProviderUnavailable(str(exc)) from exc
+
+    def delete_folder(self, path: str) -> None:
+        key = self._folder_key(path)
+        if not key:
+            return
+        try:
+            self.client.delete_object(Bucket=self.bucket, Key=key)
         except Exception as exc:
             raise ProviderUnavailable(str(exc)) from exc

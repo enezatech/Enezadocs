@@ -72,3 +72,11 @@ class DocumentationProvider(Protocol):
     def save_document(self, path: str, content: bytes) -> None:
         """Persist markdown at the provider-relative ``path`` (without ``.md``)."""
         ...
+
+    def create_folder(self, path: str) -> None:
+        """Create the provider-side folder/prefix for a section or group node."""
+        ...
+
+    def delete_folder(self, path: str) -> None:
+        """Remove the provider-side folder marker (content is left in place)."""
+        ...
