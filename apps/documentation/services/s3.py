@@ -16,14 +16,18 @@ def s3_settings() -> dict:
 
 
 def s3_enabled() -> bool:
-    """True when a documentation bucket is configured in the environment."""
+    """True when S3 documentation storage is selected.
+
+    Resolved in settings from ``DOCS_S3_ENABLED`` (force on/off) or, when that
+    flag is blank, from whether ``DOCS_S3_BUCKET`` is configured.
+    """
     return bool(s3_settings().get("ENABLED"))
 
 
 class S3DocumentationProvider:
     """Read-only documentation provider backed by an S3 (or S3-compatible) bucket.
 
-    Selected automatically for LOCAL sources when ``DOCS_S3_BUCKET`` is set;
+    Selected for LOCAL sources when S3 storage is enabled (see ``s3_enabled``);
     otherwise ``LocalDocumentationProvider`` is used. Markdown files are read
     from ``DOCS_S3_PREFIX`` and mirror the filesystem layout (``<path>.md``).
     """

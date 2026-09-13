@@ -23,9 +23,10 @@ services:
     build: .
     restart: unless-stopped
     # Load the full .env into the container (DEBUG, SECRET_KEY, SSO, MCP, search
-    # tuning, ...). Optional so Coolify, which injects env vars itself, still
-    # deploys when no .env file is present. Explicit `environment` entries below
-    # take precedence over env_file.
+    # tuning, DOCS_S3_* storage, ...). Optional so Coolify, which injects env vars
+    # itself, still deploys when no .env file is present. Do NOT re-declare
+    # DOCS_S3_* under `environment`: a `${DOCS_S3_*:-}` entry expands from the
+    # compose interpolation context and would blank a value injected at runtime.
     env_file:
       - path: .env
         required: false
@@ -52,15 +53,6 @@ services:
       DJANGO_STATIC_ROOT: /app/staticfiles
       DJANGO_MEDIA_ROOT: /app/media
       FASTEMBED_CACHE_PATH: /cache/fastembed
-      # Optional S3-compatible documentation storage. Leave DOCS_S3_BUCKET
-      # blank to use local storage; configure in Coolify's Environment Variables.
-      DOCS_S3_BUCKET: ${DOCS_S3_BUCKET:-}
-      DOCS_S3_PREFIX: ${DOCS_S3_PREFIX:-}
-      DOCS_S3_REGION: ${DOCS_S3_REGION:-}
-      DOCS_S3_ENDPOINT_URL: ${DOCS_S3_ENDPOINT_URL:-}
-      DOCS_S3_ACCESS_KEY_ID: ${DOCS_S3_ACCESS_KEY_ID:-}
-      DOCS_S3_SECRET_ACCESS_KEY: ${DOCS_S3_SECRET_ACCESS_KEY:-}
-      DOCS_S3_USE_PATH_STYLE: ${DOCS_S3_USE_PATH_STYLE:-0}
     depends_on:
       db:
         condition: service_healthy

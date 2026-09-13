@@ -245,14 +245,27 @@ DOCS_S3 = {
     "SECRET_ACCESS_KEY": os.environ.get("DOCS_S3_SECRET_ACCESS_KEY", "").strip(),
     "USE_PATH_STYLE": os.environ.get("DOCS_S3_USE_PATH_STYLE", "0") == "1",
 }
-DOCS_S3["ENABLED"] = bool(DOCS_S3["BUCKET"])
+_DOCS_S3_TRUTHY = {"1", "true", "yes", "on"}
+_DOCS_S3_FALSY = {"0", "false", "no", "off"}
+_s3_flag = os.environ.get("DOCS_S3_ENABLED", "").strip().lower()
+if _s3_flag in _DOCS_S3_TRUTHY:
+    DOCS_S3["ENABLED"] = True
+elif _s3_flag in _DOCS_S3_FALSY:
+    DOCS_S3["ENABLED"] = False
+else:
+    DOCS_S3["ENABLED"] = bool(DOCS_S3["BUCKET"])
 
 if DOCS_S3["ENABLED"]:
+    from django.core.exceptions import ImproperlyConfigured
+
+    if not DOCS_S3["BUCKET"]:
+        raise ImproperlyConfigured(
+            "DOCS_S3_ENABLED is enabled but DOCS_S3_BUCKET is blank; set the bucket "
+            "or unset DOCS_S3_ENABLED to use local storage.",
+        )
     _s3_has_key = bool(DOCS_S3["ACCESS_KEY_ID"])
     _s3_has_secret = bool(DOCS_S3["SECRET_ACCESS_KEY"])
     if _s3_has_key != _s3_has_secret:
-        from django.core.exceptions import ImproperlyConfigured
-
         raise ImproperlyConfigured(
             "DOCS_S3_ACCESS_KEY_ID and DOCS_S3_SECRET_ACCESS_KEY must be set together "
             "when DOCS_S3_BUCKET is configured (set both, or leave both blank to use "

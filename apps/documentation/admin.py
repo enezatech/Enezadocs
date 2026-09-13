@@ -28,6 +28,7 @@ from .models import (
 )
 from .services.factory import get_provider
 from .services.mcp_tokens import generate_token, hash_token
+from .services.s3 import s3_enabled
 from .services.structure import rebuild_from_provider_tree
 from .services.sync import invalidate_source, rebuild_index_for_source, sync_source
 
@@ -324,7 +325,10 @@ def _is_local_node(node):
     site = node.site
     if site is None or site.source is None:
         return False
-    return site.source.source_type == DocumentationSource.SourceType.LOCAL
+    return (
+        site.source.source_type == DocumentationSource.SourceType.LOCAL
+        and not s3_enabled()
+    )
 
 
 def _local_root(site):
