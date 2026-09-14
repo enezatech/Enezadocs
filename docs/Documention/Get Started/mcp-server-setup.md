@@ -122,10 +122,14 @@ per-token **allow private** flag controls whether it may read content marked
 3. Save. The bearer token is shown at the top of the page, and again on the token's change
    page with a **Copy** button, so you can retrieve it later.
 
+The change page also shows a **Kilo client setup (kilo.json)** field: a ready-to-paste
+`kilo.json` block with the endpoint URL and bearer token, plus its own **Copy** button, so you
+can hand it straight to a user to drop into their client.
+
 To re-copy tokens, open **MCP tokens**, select one or more rows, and choose **Reveal bearer
 token**. To issue a fresh value instead (which invalidates the old one), use **Regenerate
 bearer token**. Tokens created before the encrypted copy was added have no stored value;
-regenerate them to get a copyable token.
+regenerate them to get a copyable token and setup.
 
 Disable a token at any time by clearing **enabled**, and check **last used at** to see
 whether an agent is still calling it.

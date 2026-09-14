@@ -4,6 +4,7 @@ import hashlib
 import secrets
 from datetime import timedelta
 
+from django.conf import settings
 from django.utils import timezone
 
 TOKEN_SCHEME = "mcp_"
@@ -60,3 +61,26 @@ def resolve_token(raw: str):
         token.last_used_at = now
         token.save(update_fields=["last_used_at"])
     return token
+
+
+def build_client_config(token, base_url: str) -> dict:
+    """Return the Kilo ``mcp`` client config for ``token``.
+
+    ``base_url`` is the deployment origin without a trailing slash, e.g.
+    ``https://docs.example.com``. The endpoint is ``<base>/<MCP_PATH>/<slug>/``
+    and the snippet key is ``<site-slug>-<server-slug>``.
+    """
+    server = token.server
+    mcp_path = getattr(settings, "MCP_PATH", "/mcp") or "/mcp"
+    url = f"{base_url.rstrip('/')}/{mcp_path.strip('/')}/{server.slug}/"
+    key = f"{server.site.slug}-{server.slug}"
+    return {
+        "mcp": {
+            key: {
+                "type": "remote",
+                "url": url,
+                "headers": {"Authorization": f"Bearer {token.token}"},
+                "enabled": True,
+            }
+        }
+    }

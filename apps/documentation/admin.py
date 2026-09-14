@@ -1,3 +1,4 @@
+import json
 import re
 import shutil
 from pathlib import Path
@@ -27,7 +28,7 @@ from .models import (
     QuickPath,
 )
 from .services.factory import get_provider
-from .services.mcp_tokens import generate_token, hash_token
+from .services.mcp_tokens import build_client_config, generate_token, hash_token
 from .services.s3 import s3_enabled
 from .services.structure import rebuild_from_provider_tree
 from .services.sync import invalidate_source, rebuild_index_for_source, sync_source
@@ -564,11 +565,39 @@ class MCPTokenAdmin(admin.ModelAdmin):
         "prefix",
         "token_hash",
         "token_value",
+        "client_setup",
         "last_used_at",
         "created_at",
         "updated_at",
     )
     actions = ("reveal_token", "regenerate_token")
+
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        self._request = request
+        return super().changeform_view(request, object_id, form_url, extra_context)
+
+    @admin.display(description="Kilo client setup (kilo.json)")
+    def client_setup(self, obj):
+        if obj is None or not obj.pk:
+            return "Save the token first."
+        if not obj.token:
+            return mark_safe(
+                "Not stored. Use <strong>Regenerate bearer token</strong> to "
+                "issue a copyable setup.",
+            )
+        base = ""
+        request = getattr(self, "_request", None)
+        if request is not None:
+            base = request.build_absolute_uri("/").rstrip("/")
+        payload = json.dumps(build_client_config(obj, base), indent=2)
+        return format_html(
+            '<textarea id="mcp-client-setup" readonly rows="9" '
+            'style="width: 100%; font-family: monospace;">{payload}</textarea> '
+            '<button type="button" '
+            "onclick=\"navigator.clipboard.writeText("
+            "document.getElementById('mcp-client-setup').value)\">Copy</button>",
+            payload=payload,
+        )
 
     @admin.display(description="Bearer token")
     def token_value(self, obj):
