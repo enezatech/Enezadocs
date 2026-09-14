@@ -304,6 +304,34 @@ def _register_resources(server) -> None:
 _register_resources(mcp)
 
 
+def _transport_security():
+    """Build MCP transport-security settings from Django's ``ALLOWED_HOSTS``.
+
+    The MCP endpoint is served by Starlette, not Django, so Django's
+    ``ALLOWED_HOSTS`` validation never applies to it. The MCP SDK instead
+    auto-enables DNS rebinding protection restricted to localhost when the
+    ``host`` argument is left at its default, which rejects every production
+    request whose Host header is the public domain (HTTP 421). Derive the
+    allowed hosts from ``ALLOWED_HOSTS`` so the endpoint accepts the same
+    hosts as the rest of the site.
+    """
+    try:
+        from mcp.server.transport_security import TransportSecuritySettings
+    except ImportError:
+        return None
+    allowed = []
+    for entry in getattr(settings, "ALLOWED_HOSTS", []):
+        host = (entry or "").strip().lstrip(".")
+        if not host or host == "*":
+            continue
+        allowed.append(host)
+        allowed.append(f"{host}:*")
+    return TransportSecuritySettings(
+        enable_dns_rebinding_protection=bool(allowed),
+        allowed_hosts=allowed,
+    )
+
+
 def _streamable_http_app():
     """Build the ASGI app for the MCP endpoint.
 
@@ -311,7 +339,14 @@ def _streamable_http_app():
     by the bearer middleware reliably reaches the tool handler. Older SDK
     builds without ``stateless_http`` fall back to the default mode.
     """
+    transport_security = _transport_security()
     for kwargs in (
+        {
+            "streamable_http_path": "/",
+            "stateless_http": True,
+            "transport_security": transport_security,
+        },
+        {"streamable_http_path": "/", "transport_security": transport_security},
         {"streamable_http_path": "/", "stateless_http": True},
         {"streamable_http_path": "/"},
     ):

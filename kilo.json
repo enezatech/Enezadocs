@@ -8,6 +8,14 @@
         "Authorization": "Bearer mcp_GfK3M1NU4ONowTVCNsyrNpR0KHws5wPvp4Xx1FXYuSg"
       },
       "enabled": true
+    },
+    "enezaframework-developer": {
+      "type": "remote",
+      "url": "https://docs.workspace.enezatech.com/mcp/enezatframework/",
+      "headers": {
+        "Authorization": "Bearer mcp_2IMSfQnLeqEWt0NQQ5sIKZZzpD04CiqqA_panyenIuY"
+      },
+      "enabled": true
     }
   }
 }
