@@ -82,6 +82,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.github",
     "allauth.socialaccount.providers.google",
     "documentation",
+    "django_tasks_db",
 ]
 
 MIDDLEWARE = [
@@ -219,16 +220,45 @@ SOCIALACCOUNT_PROVIDERS = {
     },
 }
 
-CACHES = {
+DOCS_CACHE_BACKEND = os.environ.get("DOCS_CACHE_BACKEND", "locmem").strip().lower()
+DOCS_CACHE_TABLE = (
+    os.environ.get("DOCS_CACHE_TABLE", "docs_cache_table").strip() or "docs_cache_table"
+)
+
+if DOCS_CACHE_BACKEND == "db":
+    # Database cache shared across every web worker and the background worker,
+    # so one process's invalidation reaches them all. Requires
+    # `manage.py createcachetable` (run by the Docker entrypoints).
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+            "LOCATION": DOCS_CACHE_TABLE,
+            "OPTIONS": {"MAX_ENTRIES": 10000},
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "enezadocs-docs-cache",
+        }
+    }
+
+# Background tasks (django.tasks). The database backend persists queued tasks so
+# a separate `python manage.py db_worker --queue-name=sync` process can run them
+# off the request thread. `sync` carries the documentation-sync task.
+TASKS = {
     "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "enezadocs-docs-cache",
+        "BACKEND": "django_tasks_db.DatabaseBackend",
+        "QUEUES": ["default", "sync"],
     }
 }
 
 DOCS_CACHE_TREE_TTL = int(os.environ.get("DOCS_CACHE_TREE_TTL", "300"))
 DOCS_CACHE_DOCUMENT_TTL = int(os.environ.get("DOCS_CACHE_DOCUMENT_TTL", "300"))
 DOCS_CACHE_ASSET_TTL = int(os.environ.get("DOCS_CACHE_ASSET_TTL", "900"))
+DOCS_CACHE_RENDER_TTL = int(os.environ.get("DOCS_CACHE_RENDER_TTL", "300"))
+DOCS_CACHE_HOME_TTL = int(os.environ.get("DOCS_CACHE_HOME_TTL", "300"))
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 

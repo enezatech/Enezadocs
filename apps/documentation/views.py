@@ -2,6 +2,8 @@ import mimetypes
 from collections import Counter
 from urllib.parse import quote
 
+from django.conf import settings
+from django.core.cache import cache
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -30,9 +32,27 @@ def _get_site(slug):
 
 class HomeView(View):
     def get(self, request):
-        home = HomePage.load()
-        sites = list(DocumentationSite.objects.filter(enabled=True))
         authenticated = request.user.is_authenticated
+        context = self._context(authenticated)
+        return render(request, "documentation/home.html", context)
+
+    def _context(self, authenticated):
+        scope = "full" if authenticated else "public"
+        key = f"docs:home:ctx:{scope}"
+        if not settings.DEBUG:
+            cached = cache.get(key)
+            if cached is not None:
+                return cached
+        context = self._build_context(authenticated)
+        if not settings.DEBUG:
+            cache.set(key, context, settings.DOCS_CACHE_HOME_TTL)
+        return context
+
+    def _build_context(self, authenticated):
+        home = HomePage.load()
+        sites = list(
+            DocumentationSite.objects.filter(enabled=True).select_related("source"),
+        )
 
         categories = self._categories(sites)
         guide_counts = self._guide_counts(sites)
@@ -54,25 +74,24 @@ class HomeView(View):
             site.group_count = group_counts.get(site.id, 0)
         featured = self._featured(home, authenticated)
 
-        context = {
+        return {
             "home": home,
             "sites": sites,
             "categories": categories,
             "featured": featured,
-            "quick_paths": home.quick_paths.all(),
+            "quick_paths": list(home.quick_paths.all()),
             "quick_install_bullets": [
                 bullet.strip()
                 for bullet in home.quick_install_bullets.splitlines()
                 if bullet.strip()
             ],
-            "updates": home.updates.all(),
+            "updates": list(home.updates.select_related("site")),
             "stat_sites": len(sites),
             "stat_articles": sum(guide_counts.values()),
             "stat_sections": sum(section_counts.values()),
             "stat_groups": sum(group_counts.values()),
             "stat_latest": home.latest_release,
         }
-        return render(request, "documentation/home.html", context)
 
     def _categories(self, sites):
         counts = Counter()
@@ -95,7 +114,7 @@ class HomeView(View):
 
     def _featured(self, home, authenticated):
         featured = []
-        for fs in home.featured_sites.all():
+        for fs in home.featured_sites.select_related("site"):
             site = fs.site
             featured.append(
                 {
@@ -229,7 +248,7 @@ class DocumentationView(View):
             "current_path": path,
             "open_keys": collect_open_keys(tree, path),
             "search_url": f"/docs/{site.slug}/search/",
-            "github_url": service.source_home_url(),
+            "source_link": service.source_link(),
         }
 
     def _structure_navigation(self, site, tree, path):

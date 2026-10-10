@@ -53,6 +53,7 @@ services:
       DJANGO_STATIC_ROOT: /app/staticfiles
       DJANGO_MEDIA_ROOT: /app/media
       FASTEMBED_CACHE_PATH: /cache/fastembed
+      DOCS_CACHE_BACKEND: ${DOCS_CACHE_BACKEND:-db}
     depends_on:
       db:
         condition: service_healthy
@@ -61,6 +62,31 @@ services:
       - static_data:/app/staticfiles
       - docs_data:/app/docs
       - fastembed_cache:/cache
+
+  worker:
+    build: .
+    restart: unless-stopped
+    # Runs queued background tasks (documentation sync) off the request thread
+    # via `manage.py db_worker`. Shares the database and the content/embedding
+    # volumes with `web` so syncs read the same files and model cache.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-0}
+      DB_ENGINE: postgres
+      DATABASE_URL: postgres://${POSTGRES_USER:-enezadocs}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required (see .env.sample)}@db:5432/${POSTGRES_DB:-enezadocs}
+      DJANGO_MEDIA_ROOT: /app/media
+      FASTEMBED_CACHE_PATH: /cache/fastembed
+      DOCS_CACHE_BACKEND: ${DOCS_CACHE_BACKEND:-db}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - media_data:/app/media
+      - docs_data:/app/docs
+      - fastembed_cache:/cache
+    entrypoint: ["/app/docker/worker.sh"]
 
 volumes:
   pgdata:

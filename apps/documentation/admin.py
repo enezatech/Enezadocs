@@ -27,18 +27,31 @@ from .models import (
     MCPServer,
     QuickPath,
 )
+from .services.documentation import clear_home_cache
 from .services.factory import get_provider
 from .services.mcp_tokens import build_client_config, generate_token, hash_token
 from .services.s3 import s3_enabled
 from .services.structure import rebuild_from_provider_tree
-from .services.sync import invalidate_source, rebuild_index_for_source, sync_source
+from .services.sync import (
+    enqueue_source_sync,
+    invalidate_source,
+    rebuild_index_for_source,
+)
 
 
 @admin.action(description="Sync documentation")
 def sync_documentation(modeladmin, request, queryset):
+    queued = 0
+    skipped = 0
     for source in queryset:
-        sync_source(source)
-    modeladmin.message_user(request, "Documentation sync complete.")
+        if enqueue_source_sync(source):
+            queued += 1
+        else:
+            skipped += 1
+    message = f"Queued {queued} source(s) for sync."
+    if skipped:
+        message += f" {skipped} already queued or running."
+    modeladmin.message_user(request, message)
 
 
 @admin.action(description="Import navigation structure from provider")
@@ -208,11 +221,17 @@ class MarkdownUploadForm(forms.Form):
 
 @admin.register(DocumentationSite)
 class DocumentationSiteAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "category", "icon", "featured", "order", "source", "enabled")
+    list_display = ("name", "slug", "category", "icon", "source_icon", "featured", "order", "source", "enabled")
     list_filter = ("category", "featured", "enabled")
     search_fields = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
     list_editable = ("category", "icon", "featured", "order")
+    fieldsets = (
+        (None, {"fields": ("name", "slug", "description", "category")}),
+        ("Appearance", {"fields": ("icon", "logo")}),
+        ("Source link", {"fields": ("source_url", "source_icon")}),
+        ("Publishing", {"fields": ("source", "featured", "order", "enabled")}),
+    )
     actions = [import_structure]
     change_form_template = "admin/documentation/documentationsite/change_form.html"
 
@@ -225,6 +244,18 @@ class DocumentationSiteAdmin(admin.ModelAdmin):
             ),
         ]
         return custom + super().get_urls()
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        clear_home_cache()
+
+    def delete_model(self, request, obj):
+        super().delete_model(request, obj)
+        clear_home_cache()
+
+    def delete_queryset(self, request, queryset):
+        super().delete_queryset(request, queryset)
+        clear_home_cache()
 
     def _change_url(self, site):
         return reverse(
@@ -706,6 +737,14 @@ class HomePageAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return not HomePage.objects.exists()
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        clear_home_cache()
+
+    def delete_model(self, request, obj):
+        super().delete_model(request, obj)
+        clear_home_cache()
 
 
 @admin.register(QuickPath)

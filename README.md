@@ -144,6 +144,16 @@ Enezadocs/
 
    Open `http://127.0.0.1:8000/`. The admin is at `http://127.0.0.1:8000/admin/`.
 
+   Background syncs run in a separate worker. In another terminal, start it:
+
+   ```bash
+   python manage.py db_worker --queue-name=sync
+   ```
+
+   The admin **Sync documentation** action queues a task that this worker runs,
+   so the request returns immediately. Without the worker the source stays in
+   the `queued` state.
+
 8. **Add a documentation site**
 
    In the admin, create a `DocumentationSource` (LOCAL pointing at a folder, or GITHUB
@@ -181,13 +191,16 @@ Enezadocs/
    docker compose up -d
    ```
 
-   This starts two services:
+   This starts three services:
 
    - `db` — PostgreSQL 16 with a persistent `pgdata` volume.
    - `web` — the Django site and MCP endpoints on port `8000` (override with `WEB_PORT`).
+   - `worker` — runs queued background tasks (documentation sync) via
+     `manage.py db_worker --queue-name=sync`. It shares the database and the
+     `docs_data` / `media_data` / `fastembed_cache` volumes with `web`.
 
-   On start the entrypoint runs `migrate`, `collectstatic`, then serves the app with
-   Uvicorn.
+   On start the `web` entrypoint runs `migrate`, `collectstatic`, then serves the app
+   with Uvicorn; the `worker` entrypoint runs `migrate`, then polls the queue.
 
 3. **Create an admin account**
 
@@ -252,12 +265,27 @@ Key groups:
 | Search          | `DOCS_SEMANTIC_*`, `DOCS_CACHE_*`                                                                                                                                                                                                                                 |
 | S3 (optional)   | `DOCS_S3_ENABLED`, `DOCS_S3_BUCKET`, `DOCS_S3_PREFIX`, `DOCS_S3_REGION`, `DOCS_S3_ENDPOINT_URL`, `DOCS_S3_ACCESS_KEY_ID`, `DOCS_S3_SECRET_ACCESS_KEY`, `DOCS_S3_USE_PATH_STYLE` (`DOCS_S3_ENABLED`: 1 force S3, 0 force local, blank = S3 when the bucket is set) |
 
+## Performance & caching
+
+Documentation responses are cached in a shared **database cache** so every
+uvicorn worker and the background worker see the same data (set
+`DOCS_CACHE_BACKEND=db`; the Docker entrypoints run
+`python manage.py createcachetable` to create `docs_cache_table`). Opening a
+GitHub-backed page reuses navigation metadata stored at index time instead of
+re-fetching every page body, and rendered HTML is cached per document.
+
+After deploying this to an existing instance, run
+`python manage.py build_docs_index` once (or trigger **Sync documentation** in
+the admin) so `DocumentationSearchDocument` rows carry the navigation metadata;
+until then the tree falls back to reading each page body.
+
 ---
 
 ## Management commands
 
 ```bash
-python manage.py sync_docs           # pull latest content for enabled GitHub sources
+python manage.py db_worker --queue-name=sync   # run queued background tasks (sync)
+python manage.py sync_docs           # pull latest content for enabled GitHub sources (synchronous)
 python manage.py import_structure    # (re)import the navigation tree
 python manage.py build_docs_index    # build the search / semantic index
 python manage.py validate_docs       # report broken links, missing assets, bad frontmatter

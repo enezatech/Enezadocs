@@ -49,6 +49,7 @@ class DocumentationService:
         self._raw_cache: dict[str, str | None] = {}
         self._provider_tree_cache = None
         self._url_map_cache: dict[str, str] | None = None
+        self._page_meta_cache: dict[str, tuple] | None = None
 
     def _key(self, kind, path=""):
         return f"docs:site:{self.site.id}:{kind}:{path}"
@@ -105,6 +106,7 @@ class DocumentationService:
                 provider_tree,
                 self.get_raw,
                 authenticated=authenticated,
+                page_meta=(self.page_meta_map() if self._use_cache else None),
             )
         else:
             try:
@@ -198,13 +200,47 @@ class DocumentationService:
         self._raw_cache[path] = raw
         return raw
 
+    def page_meta_map(self):
+        """Return ``{path: (label, order, access)}`` persisted at index time.
+
+        Built once per service (and cached per source) from
+        ``DocumentationSearchDocument`` rows, so the navigation tree can label
+        pages and filter private content without fetching each page body.
+        """
+        if self._page_meta_cache is not None:
+            return self._page_meta_cache
+        key = f"docs:source:{self.source.id}:pagemeta"
+        if self._use_cache:
+            cached = cache.get(key)
+            if cached is not None:
+                self._page_meta_cache = cached
+                return cached
+        from documentation.models import DocumentationSearchDocument
+
+        rows = DocumentationSearchDocument.objects.filter(
+            source=self.source,
+        ).values_list("path", "nav_label", "nav_order", "access")
+        mapping = {
+            path: (label, order, access)
+            for path, label, order, access in rows
+        }
+        if self._use_cache and mapping:
+            cache.set(key, mapping, settings.DOCS_CACHE_TREE_TTL)
+        self._page_meta_cache = mapping
+        return mapping
+
     def document(self, path):
         path = (path or "").strip("/")
         raw = self.get_raw(path)
         if raw is None:
             return None
 
-        rendered = self.renderer.render(raw, path)
+        render_key = self._key("render", path)
+        rendered = cache.get(render_key) if self._use_cache else None
+        if rendered is None:
+            rendered = self.renderer.render(raw, path)
+            if self._use_cache:
+                cache.set(render_key, rendered, settings.DOCS_CACHE_RENDER_TTL)
         flat = flatten(self.tree())
         order = [node.path for node in flat]
         idx = order.index(path) if path in order else -1
@@ -276,3 +312,36 @@ class DocumentationService:
         prefix = github.root_path.strip("/")
         base = f"https://github.com/{github.owner}/{github.repository}/tree/{github.branch}"
         return f"{base}/{prefix}" if prefix else base
+
+    def source_link(self):
+        """Return the header source link as ``{"url", "icon"}`` or ``None``.
+
+        An explicit ``source_url`` on the site always wins. Otherwise GitHub
+        sources fall back to the derived repository URL with the GitHub icon;
+        every other case yields ``None`` so no link is rendered.
+        """
+        url = (self.site.source_url or "").strip()
+        if url:
+            return {"url": url, "icon": self.site.source_icon}
+        github_url = self.source_home_url()
+        if github_url:
+            return {"url": github_url, "icon": "github"}
+        return None
+
+
+HOME_PAGE_CACHE_KEY = "docs:home:page"
+HOME_CONTEXT_CACHE_KEYS = ("docs:home:ctx:public", "docs:home:ctx:full")
+
+
+def clear_home_cache():
+    """Drop cached home-page data (branding row and per-scope context).
+
+    The shared database cache has no ``delete_pattern``, so each known key is
+    deleted explicitly. The full context, including featured docs, is cached
+    per auth scope under ``docs:home:ctx:*``.
+    """
+    from django.core.cache import cache as _cache
+
+    _cache.delete(HOME_PAGE_CACHE_KEY)
+    for key in HOME_CONTEXT_CACHE_KEYS:
+        _cache.delete(key)

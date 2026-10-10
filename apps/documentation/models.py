@@ -167,6 +167,13 @@ class DocumentationSite(models.Model):
         CARD = "card", "Card"
         BOX = "box", "Box"
 
+    class LinkIcon(models.TextChoices):
+        GITHUB = "github", "GitHub"
+        GLOBE = "globe", "Globe"
+        EXTERNAL_LINK = "external-link", "External link"
+        BOOK = "book", "Book"
+        CODE = "code", "Code"
+
     name = models.CharField(
         max_length=200,
         verbose_name="name",
@@ -201,6 +208,17 @@ class DocumentationSite(models.Model):
         blank=True,
         null=True,
         verbose_name="logo",
+    )
+    source_url = models.URLField(
+        blank=True,
+        verbose_name="source link",
+        help_text="Open-source repo or product webpage. Leave blank to use the GitHub repository URL for GitHub sources.",
+    )
+    source_icon = models.CharField(
+        max_length=20,
+        choices=LinkIcon.choices,
+        default=LinkIcon.GITHUB,
+        verbose_name="source link icon",
     )
     featured = models.BooleanField(
         default=False,
@@ -254,6 +272,21 @@ class DocumentationSearchDocument(models.Model):
     content = models.TextField(
         blank=True,
         verbose_name="content",
+    )
+    nav_label = models.CharField(
+        max_length=300,
+        blank=True,
+        verbose_name="nav label",
+    )
+    nav_order = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="nav order",
+    )
+    access = models.CharField(
+        max_length=20,
+        default="public",
+        verbose_name="access",
     )
     updated_at = models.DateTimeField(
         auto_now=True,

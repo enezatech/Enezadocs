@@ -23,6 +23,9 @@ def rebuild_index_for_source(source):
 
     for site in source.sites.all():
         build_index(DocumentationService(site))
+    # Indexing caches the tree while the fresh metadata rows do not yet exist;
+    # drop those caches so the next request rebuilds from the persisted rows.
+    invalidate_source(source)
 
 
 def rebuild_structure_for_source(source, sites=None):
@@ -51,6 +54,50 @@ def _structure_missing_sites(source):
             type__in=["section", "group"],
         ).exists()
     ]
+
+
+def _result_targets_source(result, source_id):
+    """True when a queued task result carries ``source_id`` as an argument."""
+    payload = result.args_kwargs or {}
+    if isinstance(payload, dict):
+        args = payload.get("args") or []
+        kwargs = payload.get("kwargs") or {}
+    else:
+        args = payload
+        kwargs = {}
+    if source_id in args:
+        return True
+    return kwargs.get("source_id") == source_id
+
+
+def enqueue_source_sync(source):
+    """Queue a background sync for ``source``.
+
+    Returns ``True`` when a task was enqueued, or ``False`` when the source
+    already has a ``READY``/``RUNNING`` sync task in flight.
+    """
+    from django_tasks_db.models import DBTaskResult
+
+    in_flight = DBTaskResult.objects.filter(
+        status__in=["READY", "RUNNING"],
+        task_path__endswith="sync_source_task",
+    )
+    for result in in_flight:
+        if _result_targets_source(result, source.pk):
+            return False
+
+    from documentation.tasks import sync_source_task
+
+    previous_status = source.last_sync_status
+    source.last_sync_status = "queued"
+    source.save(update_fields=["last_sync_status"])
+    try:
+        sync_source_task.enqueue(source.pk)
+    except Exception:
+        source.last_sync_status = previous_status
+        source.save(update_fields=["last_sync_status"])
+        raise
+    return True
 
 
 def sync_source(source):

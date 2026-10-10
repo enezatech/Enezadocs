@@ -28,6 +28,36 @@ def meta_access(metadata: dict) -> str:
     return PUBLIC
 
 
+MENU_KEYS = ("menu name", "menu_name", "menu", "menu-name")
+
+
+def label_and_order(metadata: dict, fallback: str) -> tuple[str, int | None]:
+    """Derive a page's menu label and order from parsed frontmatter metadata.
+
+    Label comes from a menu-name key, then the title, then ``fallback``. Order
+    comes from ``position`` when it parses to a number.
+    """
+    menu = None
+    for key in MENU_KEYS:
+        value = metadata.get(key)
+        if value is not None:
+            menu = value
+            break
+    if menu is not None:
+        label = str(menu).strip() or fallback
+    else:
+        title = str(metadata.get("title") or "").strip()
+        label = title or fallback
+    order = None
+    position = metadata.get("position")
+    if position is not None:
+        try:
+            order = int(float(str(position).replace(",", "").strip()))
+        except (TypeError, ValueError):
+            order = None
+    return label, order
+
+
 def raw_access(raw: str | None) -> str:
     """Parse a raw markdown document and return its access level."""
     if not raw:

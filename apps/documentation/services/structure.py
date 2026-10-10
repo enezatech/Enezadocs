@@ -4,14 +4,12 @@ import posixpath
 
 import frontmatter
 
-from .access import PRIVATE, raw_access
+from .access import PRIVATE, label_and_order, raw_access
 from .base import NavigationNode
 from .navigation import flatten, title_from_name
 
 NODE_TYPE_SECTION = "section"
 NODE_TYPE_GROUP = "group"
-
-MENU_KEYS = ("menu name", "menu_name", "menu", "menu-name")
 
 
 def _page_meta(raw: str | None) -> dict:
@@ -23,29 +21,16 @@ def _page_meta(raw: str | None) -> dict:
 
 
 def _page_label_and_order(raw: str | None, fallback: str) -> tuple[str, int | None]:
-    meta = _page_meta(raw)
-    menu = None
-    for key in MENU_KEYS:
-        value = meta.get(key)
-        if value is not None:
-            menu = value
-            break
-    if menu is not None:
-        label = str(menu).strip() or fallback
-    else:
-        title = str(meta.get("title") or "").strip()
-        label = title or fallback
-    position = meta.get("position")
-    order = None
-    if position is not None:
-        try:
-            order = int(float(str(position).replace(",", "").strip()))
-        except (TypeError, ValueError):
-            order = None
-    return label, order
+    return label_and_order(_page_meta(raw), fallback)
 
 
-def build_structure_tree(site, provider_tree, read_raw, authenticated=True) -> list[NavigationNode]:
+def build_structure_tree(
+    site,
+    provider_tree,
+    read_raw,
+    authenticated=True,
+    page_meta=None,
+) -> list[NavigationNode]:
     """Assemble the navigation tree from section/group nodes plus auto pages.
 
     Every enabled markdown file found directly inside a node's folder becomes a
@@ -56,6 +41,12 @@ def build_structure_tree(site, provider_tree, read_raw, authenticated=True) -> l
     whose access (or an ancestor's access) is private is skipped together with
     its whole subtree, and pages whose own frontmatter declares private access
     are skipped.
+
+    ``page_meta`` maps a document path to a precomputed
+    ``(label, order, access)`` tuple (persisted at index time). When supplied,
+    pages are labelled without reading their body over the network; paths
+    missing from the map fall back to ``read_raw`` so an unindexed or stale
+    source still resolves labels and private access correctly.
     """
     from documentation.models import DocumentationNode
 
@@ -83,14 +74,26 @@ def build_structure_tree(site, provider_tree, read_raw, authenticated=True) -> l
         pages: list[NavigationNode] = []
         for doc in found:
             path = doc.path
-            raw = None
-            try:
-                raw = read_raw(path)
-            except Exception:
+            fallback = doc.title or title_from_name(path)
+            meta = page_meta.get(path) if page_meta else None
+            if meta is not None:
+                label, order, access = meta
+                if not authenticated and access == PRIVATE:
+                    continue
+                label = label or fallback
+            else:
                 raw = None
-            if not authenticated and raw is not None and raw_access(raw) == PRIVATE:
-                continue
-            label, order = _page_label_and_order(raw, doc.title or title_from_name(path))
+                try:
+                    raw = read_raw(path)
+                except Exception:
+                    raw = None
+                if (
+                    not authenticated
+                    and raw is not None
+                    and raw_access(raw) == PRIVATE
+                ):
+                    continue
+                label, order = _page_label_and_order(raw, fallback)
             pages.append(
                 NavigationNode(
                     title=label,

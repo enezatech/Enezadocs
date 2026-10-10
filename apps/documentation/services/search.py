@@ -8,6 +8,7 @@ from django.db import DatabaseError, connection
 
 from documentation.models import DocumentationChunk, DocumentationSearchDocument
 
+from .access import label_and_order, meta_access
 from .chunking import chunk_markdown
 from .embeddings import cosine_similarity, decode_vector, encode_vector, get_embedder
 from .navigation import flatten, title_from_name
@@ -60,6 +61,7 @@ def build_index(service):
         metadata, body = parse_frontmatter(raw)
         title = str(metadata.get("title") or "").strip() or title_from_name(node.path)
         description = str(metadata.get("description") or "").strip()
+        nav_label, nav_order = label_and_order(metadata, title)
         text = plain_text(body)
         DocumentationSearchDocument.objects.create(
             source=source,
@@ -67,6 +69,9 @@ def build_index(service):
             title=title,
             description=description,
             content=text,
+            nav_label=nav_label,
+            nav_order=nav_order,
+            access=meta_access(metadata),
         )
         fts_rows.append((source.pk, node.path, text))
         chunks = [

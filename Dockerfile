@@ -18,7 +18,8 @@ COPY . /app
 RUN useradd --create-home --shell /bin/bash app \
     && mkdir -p /app/media /app/staticfiles /app/docs /cache/fastembed \
     && sed -i 's/\r$//' /app/docker/entrypoint.sh \
-    && chmod +x /app/docker/entrypoint.sh \
+    && sed -i 's/\r$//' /app/docker/worker.sh \
+    && chmod +x /app/docker/entrypoint.sh /app/docker/worker.sh \
     && chown -R app:app /app /cache
 
 USER app
