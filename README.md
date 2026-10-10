@@ -27,7 +27,8 @@ your coding agent to read your documentation directly.
 - **Scoped access** — each MCP server is bound to a site, section, or group and
   authenticated with its own bearer tokens.
 - **Authentication** — email sign-up/login plus optional GitHub and Google SSO
-  (django-allauth).
+  (django-allauth). New-account registration can be switched on or off from the admin
+  (**Home page → Registration**); existing users always keep signing in.
 - **Multi-site home page** — featured sites, quick paths, and release updates managed
   from the Django admin.
 - **Offline-friendly** — responses are cached, so previously fetched documents remain

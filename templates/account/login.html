@@ -54,9 +54,11 @@
         <button type="submit" class="btn-primary mt-1">Sign in</button>
       </form>
 
+      {% if home.allow_registration %}
       <div class="px-7 pb-8">
         <p class="text-center text-sm text-muted">New here? <a href="{% url 'account_signup' %}" class="font-medium underline underline-offset-2" style="color:var(--accent-fg)">Create an account</a></p>
       </div>
+      {% endif %}
     </div>
   </div>
 </main>

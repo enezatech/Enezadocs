@@ -444,6 +444,11 @@ class HomePage(models.Model):
         default="Enezadocs",
         verbose_name="brand name",
     )
+    allow_registration = models.BooleanField(
+        default=True,
+        verbose_name="allow registration",
+        help_text="When disabled, new accounts cannot be created (email or social). Existing users can still sign in.",
+    )
     favicon = models.ImageField(
         upload_to="documentation/branding/",
         blank=True,

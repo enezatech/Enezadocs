@@ -99,7 +99,9 @@
         <button type="submit" class="btn-primary w-full">Sign out</button>
       </form>
       {% else %}
+      {% if home.allow_registration %}
       <a href="{% url 'account_signup' %}" class="btn-secondary w-full">Create account</a>
+      {% endif %}
       <a href="{% url 'account_login' %}" class="btn-primary w-full">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg>
         <span>Sign in</span>
@@ -367,7 +369,9 @@
         <h3 class="eyebrow mb-3">Account</h3>
         <ul class="grid gap-2 text-sm text-muted">
           <li><a href="{% url 'account_login' %}" class="footer-link">Sign in</a></li>
+          {% if home.allow_registration %}
           <li><a href="{% url 'account_signup' %}" class="footer-link">Create account</a></li>
+          {% endif %}
           <li><a href="{% url 'account_login' %}" class="footer-link">Support</a></li>
         </ul>
       </div>
